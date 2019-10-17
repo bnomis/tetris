@@ -62,3 +62,10 @@
   :next
   (fn-traced [db _]
     (update db :current-state inc)))
+
+
+(rf/reg-event-db
+  :key-press
+  (fn-traced [db _]
+    (println "key-press")
+    db))

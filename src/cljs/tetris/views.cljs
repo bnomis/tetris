@@ -39,7 +39,7 @@
 
 
 (defn main-panel []
-  [:div.tetris
+  [:div.tetris {:tab-index 0 :on-key-press #(dispatch [:key-press])}
    [:h1 "Tetris"]
    [board-background]
    [controls]])

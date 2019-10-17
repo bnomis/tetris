@@ -13,4 +13,5 @@
      :font-smoothing "antialiased"
      :font-weight "300"}]
   [:svg#board {:background-color "black"}]
-  [:.block-outline {:stroke "#444" :stroke-width "1px"}])
+  [:.block-outline {:stroke "#444" :stroke-width "1px"}]
+  [:div.tetris {:outline "none"}])

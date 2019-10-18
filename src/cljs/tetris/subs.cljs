@@ -10,6 +10,12 @@
 
 
 (rf/reg-sub
+  :game-over?
+  (fn [db _]
+    (:game-over db)))
+
+
+(rf/reg-sub
   :states
   (fn [db _]
     (:states db)))
@@ -43,10 +49,11 @@
   :prev-disabled?
   (fn [query-v _]
     [(rf/subscribe [:running?])
-     (rf/subscribe [:current-state])])
+     (rf/subscribe [:current-state])
+     (rf/subscribe [:game-over?])])
 
-  (fn [[running? current-state] _]
-    (or running? (< current-state 1))))
+  (fn [[running? current-state game-over?] _]
+    (or game-over? running? (< current-state 1))))
 
 
 (rf/reg-sub
@@ -54,7 +61,8 @@
   (fn [query-v _]
     [(rf/subscribe [:running?])
      (rf/subscribe [:current-state])
-     (rf/subscribe [:last-state])])
+     (rf/subscribe [:last-state])
+     (rf/subscribe [:game-over?])])
 
-  (fn [[running? current-state last-state] _]
-    (or running? (= current-state last-state))))
+  (fn [[running? current-state last-state game-over?] _]
+    (or game-over? running? (= current-state last-state))))

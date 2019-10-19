@@ -76,10 +76,48 @@
       (rf/dispatch [:game-over]))))
 
 
+(defn draw-active-block-on-board [current-state]
+  (let [ab (:active-block current-state)
+        bid (:id ab)
+        block-state-num (:state ab)
+        block (blocks/state bid block-state-num)
+        column (:column ab)
+        row (:row ab)
+        board (:board current-state)
+        expanded-block (blocks/blank-board-with-block block row column)]
+    (loop [board-row (first board)
+           block-row (first expanded-block)
+           board-rest (rest board)
+           block-rest (rest expanded-block)
+           out []]
+      (if (nil? board-row)
+        out
+        (recur (first board-rest) (first block-rest) (rest board-rest) (rest block-rest) (conj out (map + board-row block-row)))))))
+
+
+(defn add-active-block-to-board [current-state]
+  (-> current-state
+    (assoc :board (draw-active-block-on-board current-state))
+    (assoc :active-block nil)))
+
+
+(defn decend-block [current-state]
+  (let [ab (:active-block current-state)
+        bid (:id ab)
+        block-state-num (:state ab)
+        state (blocks/state bid block-state-num)
+        board (:board current-state)
+        column (:column ab)
+        next-row (+ (:row ab) 1)]
+    (if (block-fits board column next-row state)
+      (assoc current-state :active-block (assoc ab :row next-row))
+      (add-active-block-to-board current-state))))
+
+
 (defn next-state [current-state]
   (if-not (:active-block current-state)
     (spawn-new-block current-state)
-    current-state))
+    (decend-block current-state)))
 
 
 (rf/reg-event-db
@@ -97,7 +135,7 @@
 
 
 (defn start-timer []
-  (js/setInterval dispatch-tick-event 1000))
+  (js/setInterval dispatch-tick-event d/gravity))
 
 
 (defn stop-timer [tid]

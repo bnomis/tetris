@@ -1,4 +1,6 @@
-(ns tetris.blocks)
+(ns tetris.blocks
+  (:require [tetris.defs :as d]
+            [tetris.board :as board]))
 
 (def blocks
   {:block-i {:color "cyan"
@@ -34,7 +36,7 @@
 
 
 (defn width [block]
-  (count (nth block 0)))
+  (count (first block)))
 
 
 (defn height [block]
@@ -49,6 +51,11 @@
   (nth block row))
 
 
+(defn state [block-id state-number]
+  (let [block (get blocks block-id)]
+    (nth (:states block) state-number)))
+
+
 (defn flatten-block [block]
   (loop [counter (height block)
          row-count 0
@@ -56,3 +63,45 @@
    (if (zero? counter)
      out
      (recur (dec counter) (inc row-count) (into out (row block row-count))))))
+
+
+(defn expanded-cell-value [row column current-column]
+  (let [row-last (- (count row) 1)
+        row-index (- current-column column)]
+    (if (or (< row-index 0) (> row-index row-last))
+      0
+      (nth row row-index))))
+
+
+(defn expand-row [row column]
+  (loop [current-column 0
+         out []]
+    (if (= current-column d/board-columns)
+      out
+      (recur (inc current-column) (conj out (expanded-cell-value row column current-column))))))
+
+
+(defn expand-block [block column]
+  (loop [row (first block)
+         rest-block (rest block)
+         out []]
+    (if (nil? row)
+      out
+      (recur (first rest-block) (rest rest-block) (conj out (expand-row row column))))))
+
+
+(defn next-row [start-row current-row block]
+  (let [last-row-index (- (count block) 1)
+        row-index (- current-row start-row)]
+    (if (or (< row-index 0) (> row-index last-row-index))
+      (board/row-of-zeros d/board-columns [])
+      (nth block row-index))))
+
+
+(defn blank-board-with-block [block row column]
+  (let [expanded-block (expand-block block column)]
+    (loop [current-row 0
+           out []]
+      (if (= current-row d/board-rows)
+        out
+        (recur (inc current-row) (conj out (next-row row current-row expanded-block)))))))

@@ -1,6 +1,7 @@
 (ns tetris.blocks
   (:require [tetris.defs :as d]
-            [tetris.board :as board]))
+            [tetris.board :as board]
+            [cljs.pprint]))
 
 (def blocks
   {:block-i {:color "cyan"

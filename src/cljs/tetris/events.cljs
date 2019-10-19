@@ -14,6 +14,18 @@
    db/default-db))
 
 
+(defn dispatch-tick-event []
+ (rf/dispatch [:tick]))
+
+
+(defn start-timer []
+ (js/setInterval dispatch-tick-event d/gravity))
+
+
+(defn stop-timer [tid]
+ (js/clearInterval tid))
+
+
 (defn within-bounds [x y block-state]
   (and
     (>= x 0)
@@ -72,9 +84,7 @@
         row 0
         state 0]
     (if (block-fits board column row block-state)
-      (assoc current-state :active-block {:row row :column column :id block-id :state state})
-      (rf/dispatch [:game-over]))))
-
+      (assoc current-state :active-block {:row row :column column :id block-id :state state}))))
 
 (defn draw-active-block-on-board [current-state]
   (let [ab (:active-block current-state)
@@ -120,26 +130,24 @@
     (decend-block current-state)))
 
 
+(defn game-over [db]
+   (stop-timer (:timer db))
+   (-> db
+     (assoc :timer nil)
+     (assoc :game-over true)))
+
+
 (rf/reg-event-db
  :tick
  (fn-traced [db _]
    (let [states (:states db)
-         current-state (nth states (:current-state db))]
-     (-> db
-       (assoc :states (conj states (next-state current-state)))
-       (update :current-state inc)))))
-
-
-(defn dispatch-tick-event []
-  (rf/dispatch [:tick]))
-
-
-(defn start-timer []
-  (js/setInterval dispatch-tick-event d/gravity))
-
-
-(defn stop-timer [tid]
-  (js/clearInterval tid))
+         current-state (nth states (:current-state db))
+         next-state (next-state current-state)]
+     (if (nil? next-state)
+       (game-over db)
+       (-> db
+         (assoc :states (conj states next-state))
+         (update :current-state inc))))))
 
 
 (rf/reg-event-db
@@ -156,13 +164,6 @@
  (fn-traced [db _]
    (stop-timer (:timer db))
    (assoc db :timer nil)))
-
-
-(rf/reg-event-db
-  :game-over
-  (fn-traced [db _]
-    (stop-timer (:timer db))
-    (assoc db :timer nil)))
 
 
 (rf/reg-event-db
@@ -184,18 +185,66 @@
     (update db :current-state inc)))
 
 
+(defn block-left [current-state]
+  (let [ab (:active-block current-state)
+        bid (:id ab)
+        block-state-num (:state ab)
+        state (blocks/state bid block-state-num)
+        board (:board current-state)
+        column (:column ab)
+        row (:row ab)
+        next-column (- column 1)]
+    (if (block-fits board next-column row state)
+      (assoc current-state :active-block (assoc ab :column next-column))
+      current-state)))
+
+
 (rf/reg-event-db
   :left
   (fn-traced [db _]
-    (println "left")
-    db))
+    (let [states (:states db)
+          current-state (nth states (:current-state db))]
+      (-> db
+        (assoc :states (conj states (block-left current-state)))
+        (update :current-state inc)))))
+
+
+(defn block-right [current-state]
+  (let [ab (:active-block current-state)
+        bid (:id ab)
+        block-state-num (:state ab)
+        state (blocks/state bid block-state-num)
+        board (:board current-state)
+        column (:column ab)
+        row (:row ab)
+        next-column (+ column 1)]
+    (if (block-fits board next-column row state)
+      (assoc current-state :active-block (assoc ab :column next-column))
+      current-state)))
 
 
 (rf/reg-event-db
   :right
   (fn-traced [db _]
-    (println "right")
-    db))
+    (let [states (:states db)
+          current-state (nth states (:current-state db))]
+      (-> db
+        (assoc :states (conj states (block-right current-state)))
+        (update :current-state inc)))))
+
+
+(defn block-rotate-left [current-state]
+  (let [ab (:active-block current-state)
+        bid (:id ab)
+        block-state-num (:state ab)
+        state (blocks/state bid block-state-num)
+        board (:board current-state)
+        column (:column ab)
+        row (:row ab)
+        next-column (+ column 1)]
+    (if (block-fits board next-column row state)
+      (assoc current-state :active-block (assoc ab :column next-column))
+      current-state)))
 
 
 (rf/reg-event-db
@@ -212,8 +261,42 @@
     db))
 
 
+(defn drop-depth [current-state]
+  (let [ab (:active-block current-state)
+        bid (:id ab)
+        block-state-num (:state ab)
+        state (blocks/state bid block-state-num)
+        board (:board current-state)
+        column (:column ab)
+        row (:row ab)]
+    (loop [depth 1]
+      (if (not (block-fits board column (+ row depth) state))
+        (- depth 1)
+        (recur (inc depth))))))
+
+
+(defn drop-block [current-state depth]
+  (let [ab (:active-block current-state)
+        row (:row ab)]
+    (assoc current-state :active-block (assoc ab :row (+ row depth)))))
+
+
+(defn block-drop [current-state]
+  (let [depth (drop-depth current-state)]
+    (if (= 0 depth)
+      current-state
+      (-> current-state
+        (drop-block depth)))))
+
+
 (rf/reg-event-db
   :drop
   (fn-traced [db _]
-    (println "drop")
-    db))
+    (let [states (:states db)
+          current-state (nth states (:current-state db))
+          active-block (:active-block current-state)]
+      (if (nil? active-block)
+        db
+        (-> db
+          (assoc :states (conj states (block-drop current-state)))
+          (update :current-state inc))))))

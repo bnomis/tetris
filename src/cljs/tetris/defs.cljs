@@ -6,7 +6,7 @@
 (def board-rows 20)
 (def board-width (+ (* board-columns block-width) (* (+ board-columns 1) outline-width)))
 (def board-height (+ (* board-rows block-height) (* (+ board-rows 1) outline-width)))
-(def gravity 500)
+(def tick 500)
 
 (defn col->px [column]
   (+ (* column block-width) (* outline-width (+ column 1))))

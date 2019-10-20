@@ -1,6 +1,5 @@
 (ns tetris.blocks
   (:require [tetris.defs :as d]
-            [tetris.board :as board]
             [cljs.pprint]))
 
 (def blocks
@@ -25,15 +24,43 @@
    :block-z {:color "red"}})
 
 
+(def cmap
+ {:1 "cyan"})
+
+
+(def rotate-left-transitions
+  {:0 3
+   :1 0
+   :2 1
+   :3 2})
+
+
+(def rotate-right-transitions
+  {:0 1
+   :1 2
+   :2 3
+   :3 0})
+
+
 (defn random-block-id []
   :block-i)
 
 
-(def cmap {:1 "cyan"})
+
+(defn get-block [bid]
+  (bid blocks))
 
 
-(defn i->c [i]
-  ((keyword (str i)) cmap))
+(defn i->keyword [i]
+  (keyword (str i)))
+
+
+(defn state-transition-keyword [from to]
+  (keyword (str from "-" to)))
+
+
+(defn i->color [i]
+  ((i->keyword i) cmap))
 
 
 (defn width [block]
@@ -91,18 +118,33 @@
       (recur (first rest-block) (rest rest-block) (conj out (expand-row row column))))))
 
 
-(defn next-row [start-row current-row block]
-  (let [last-row-index (- (count block) 1)
-        row-index (- current-row start-row)]
-    (if (or (< row-index 0) (> row-index last-row-index))
-      (board/row-of-zeros d/board-columns [])
-      (nth block row-index))))
+(defn rotate-left-state [current]
+  ((i->keyword current) rotate-left-transitions))
 
 
-(defn blank-board-with-block [block row column]
-  (let [expanded-block (expand-block block column)]
-    (loop [current-row 0
-           out []]
-      (if (= current-row d/board-rows)
-        out
-        (recur (inc current-row) (conj out (next-row row current-row expanded-block)))))))
+(defn rotate-left [active-block]
+  (let [from (:state active-block)
+        to (rotate-left-state from)
+        block ((:id active-block) blocks)
+        translation ((state-transition-keyword from to) (:translations block))
+        column-delta (nth translation 0)
+        row-delta (nth translation 1)
+        row (+ (:row active-block) row-delta)
+        column (+ (:column active-block) column-delta)]
+    (assoc active-block :row row :column column :state to)))
+
+
+(defn rotate-right-state [current]
+  ((i->keyword current) rotate-right-transitions))
+
+
+(defn rotate-right [active-block]
+  (let [from (:state active-block)
+        to (rotate-right-state from)
+        block ((:id active-block) blocks)
+        translation ((state-transition-keyword from to) (:translations block))
+        column-delta (nth translation 0)
+        row-delta (nth translation 1)
+        row (+ (:row active-block) row-delta)
+        column (+ (:column active-block) column-delta)]
+    (assoc active-block :row row :column column :state to)))

@@ -10,8 +10,9 @@
             :y (d/row->px row)
             :width d/block-width
             :height d/block-height
-            :fill (blocks/i->c color)
+            :fill (blocks/i->color color)
             :key (str "block" row column)}]))
+
 
 (defn draw-active-block [active-block]
   (let [bid (:id active-block)

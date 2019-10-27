@@ -72,6 +72,17 @@
        {:on-click #(dispatch [:reset])} "Reset"]]))
 
 
+
+(defn block-controls []
+  [:div#block-controls
+    [:h2 "Controls"]
+    [:p "l - right"]
+    [:p "k - rotate right"]
+    [:p "j - rotate left"]
+    [:p "h - left"]
+    [:p "Space - drop"]])
+
+
 (defn game-over []
   (let [game-over? @(subscribe [:game-over?])]
     (if game-over?
@@ -80,6 +91,19 @@
 
 (defn clear []
   [:div.clear])
+
+
+
+(defn lhs []
+  [:div#left
+    [board]])
+
+
+(defn rhs []
+  [:div#right
+    [controls]
+    [block-controls]
+    [game-over]])
 
 
 (defn main-panel []
@@ -94,7 +118,7 @@
                                       " " (dispatch [:drop])
                                       nil)})
      [:h1 "Tetris"]
-     [board]
-     [controls]
-     [game-over]
-     [clear]]))
+     [:div.container
+       [lhs]
+       [rhs]
+       [clear]]]))

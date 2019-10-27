@@ -11,10 +11,13 @@
     :-moz-font-smoothing "antialiased"
     :font-smoothing "antialiased"
     :font-weight "300"}]
-  [:div#app {:margin "10px"}]
-  [:div#controls-container {:margin-left "250px"}]
+  [:div#app {:margin "10px" :width "800px"}]
+  [:div#left {:float "left" :width "300px"}]
+  [:div#right {:float "left"}]
+  [:div#controls-container]
   [:div#controls-container [:button {:margin-left "10px" :width "50px"}]]
-  [:div#board-container {:float "left"}]
+  [:div#block-controls {:margin "10px"}]
+  [:div#board-container]
   [:svg#board {:background-color "black"}]
   [:.block-outline {:stroke "#444" :stroke-width "1px"}]
   [:div.tetris {:outline "none"}]
